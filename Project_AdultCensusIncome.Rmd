@@ -27,3 +27,94 @@ plot(pressure)
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+# Step 1 -\> Cleaning the dataset
+
+## Downloading and taking a look
+
+```{r}
+data <- read.csv("adult.csv", sep=',', na.strings = c("?"))
+head(data,10)
+```
+
+```{r}
+summary(data)
+str(data)
+```
+
+```{r}
+freq_table <- as.data.frame(sort(table(data$workclass), decreasing = TRUE))
+colnames(freq_table) <- c("workclass", "freq")
+freq_table
+```
+
+```{r}
+data$workclass[is.na(data$workclass)] <- "Private"
+head(data)
+str(data)
+```
+
+```{r}
+freq_table_occ <- as.data.frame(sort(table(data$occupation), decreasing = TRUE))
+colnames(freq_table_occ) <- c("occupation", "freq")
+freq_table_occ
+```
+
+```{r}
+nrow(data[!complete.cases(data$occupation),])
+```
+
+```{r}
+categories <- na.omit(unique(data$occupation))
+
+idx_na <- which(is.na(data$occupation))
+
+n_na <- length(idx_na)
+
+replacement <- rep(categories, length.out = n_na)
+
+set.seed(42)
+replacement <- sample(replacement)
+
+data$occupation[idx_na] <- replacement
+
+head(data)
+```
+
+```{r}
+freq_table_occ <- as.data.frame(sort(table(data$occupation), decreasing = TRUE))
+colnames(freq_table_occ) <- c("occupation", "freq")
+freq_table_occ
+```
+
+```{r}
+library(dplyr)
+```
+
+```{r}
+data_g <- data %>%
+  group_by(education.num, education) %>%
+  summarise(freq = n()) %>%
+  arrange(education.num)
+
+data_g
+```
+
+```{r}
+idx <- which(names(data) == "education")
+data_sem_ed <- data[,-idx]
+head(data_sem_ed)
+```
+
+```{r}
+
+```
+
+```{r}
+data %>%
+  mutate_if(is.character, trimws)
+```
+
+```{r}
+unique(data$occupation)
+```
