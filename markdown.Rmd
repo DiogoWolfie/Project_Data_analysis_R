@@ -4,26 +4,117 @@ output: html_document
 date: "2025-10-22"
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+## Step 1 = Data cleaning and preparation
+
+### 1
+```{r}
+
+library(dplyr)
+library(readr)
+
+data = read_csv("adult.csv", na = "?")
+
+data
+
+colSums(is.na(data))
+
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
-```{r cars}
-summary(cars)
+
+```{r}
+colSums(is.na(data))
+# see how many "NA value" is in the data frame
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
+```{r}
+# Handle the missing values using the most frequent value of each column
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+table(data$workclass)
+
+data$workclass[is.na(data$workclass)] = "Private"
+
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+# Handle the missing values using the most frequent value of each column
+
+categories <- na.omit(unique(data$occupation))
+ 
+idx_na <- which(is.na(data$occupation))
+ 
+n_na <- length(idx_na)
+ 
+replacement <- rep(categories, length.out = n_na)
+ 
+set.seed(42)
+replacement <- sample(replacement)
+ 
+data$occupation[idx_na] <- replacement
+ 
+head(data)
+
+
+
+```
+
+```{r}
+table(data$education, data$education.num)
+#check if is there any differnt match in edu and edu.num group
+inconsistent_rows <- data %>%
+  group_by(education, education.num) %>%
+  summarise(count = n()) %>%
+  filter(n() > 1)
+
+print(inconsistent_rows)
+
+#choose to use the number
+data <- data %>% select(-education)
+
+```
+```{r}
+unique(data$workclass)
+```
+
+
+#Categorical variables
+```{r}
+
+data <- data %>%
+  mutate_if(is.character, trimws)
+
+unique(data$occupation)
+```
+
+#Step 2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
