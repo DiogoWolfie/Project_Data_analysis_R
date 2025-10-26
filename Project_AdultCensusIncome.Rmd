@@ -34,7 +34,7 @@ Note that the `echo = FALSE` parameter was added to the code chunk to prevent pr
 
 ```{r}
 data <- read.csv("adult.csv", sep=',', na.strings = c("?"))
-head(data,10)
+data
 ```
 
 ```{r}
@@ -61,7 +61,11 @@ freq_table_occ
 ```
 
 ```{r}
-nrow(data[!complete.cases(data$occupation),])
+data_occ_edd <- data %>%
+  group_by(education, occupation) %>%
+  summarise(freq = n()) %>%
+  arrange(education)
+data_occ_edd
 ```
 
 ```{r}
