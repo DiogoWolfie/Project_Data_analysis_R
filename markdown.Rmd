@@ -4,107 +4,187 @@ output: html_document
 date: "2025-10-22"
 ---
 
-## Step 1 = Data cleaning and preparation
+## Step 1: Data cleaning and preparation
 
-### 1
+## 1. Be careful when importing the data by taking into account "?" character (as a NA value?)
+
 ```{r}
 
 library(dplyr)
-library(readr)
 
-data = read_csv("adult.csv", na = "?")
+data <- read.csv("adult.csv", na.strings = "?")
 
+head(data)
 data
 
-colSums(is.na(data))
+
 
 ```
 
-
-
-
+## 2. Workclass and occupation columns: Handle the missing values using the most frequent value of each column.
 
 ```{r}
-colSums(is.na(data))
 # see how many "NA value" is in the data frame
+colSums(is.na(data))
+# 1836 in workclass / 1843 in occupation
+
+# see how many na value is oder than 60
+sum(is.na(data$workclass) & data$age >= 60)
+# see how many na value is younger than 18
+sum(is.na(data$workclass) & data$age <= 18)
+# under 18 = / workclass = neverworked / occupation = student
+
 ```
 
+### Handle the missing values using the most frequent value of each cloumn
 
 ```{r}
 # Handle the missing values using the most frequent value of each column
 
-table(data$workclass)
 
-data$workclass[is.na(data$workclass)] = "Private"
+# Custom function to calculate the most frequent value
+get_mode <- function(x) {
+  x <- na.omit(x)      
+  ux <- unique(x)       
+  ux[which.max(tabulate(match(x, ux)))]  
+}
 
+# over 65 male, over 63 female => workclass = retired / occupation = retired
+# under 18 => / workclass = neverworked / occupation = student
 
-```
+#retired
+data$workclass = ifelse(
+  (data$sex == "Male" & data$age >= 65 & is.na(data$workclass)) |
+  (data$sex == "Female" & data$age >= 63 & is.na(data$workclass)),
+  "Retired", data$workclass
+)
+data$occupation <- ifelse(
+  (data$sex == "Male" & data$age >= 65 & is.na(data$occupation)) |
+  (data$sex == "Female" & data$age >= 63 & is.na(data$occupation)),
+  "Retired", data$occupation
+)
 
-```{r}
-# Handle the missing values using the most frequent value of each column
-
-categories <- na.omit(unique(data$occupation))
- 
-idx_na <- which(is.na(data$occupation))
- 
-n_na <- length(idx_na)
- 
-replacement <- rep(categories, length.out = n_na)
- 
-set.seed(42)
-replacement <- sample(replacement)
- 
-data$occupation[idx_na] <- replacement
- 
-head(data)
-
-
-
-```
-
-```{r}
-table(data$education, data$education.num)
-#check if is there any differnt match in edu and edu.num group
-inconsistent_rows <- data %>%
-  group_by(education, education.num) %>%
-  summarise(count = n()) %>%
-  filter(n() > 1)
-
-print(inconsistent_rows)
-
-#choose to use the number
-data <- data %>% select(-education)
-
-```
-```{r}
-unique(data$workclass)
-```
+#student
+data$workclass = ifelse(data$age <= 18 & is.na(data$workclass), "Never-worked", data$workclass)
+data$occupation = ifelse(data$age <= 18 & is.na(data$occupation), "Student", data$occupation)
 
 
-#Categorical variables
-```{r}
+
+# Fill the remaining missing values using the mode within each group (education + sex + marital.status)
 
 data <- data %>%
-  mutate_if(is.character, trimws)
+  group_by(education, sex, marital.status) %>%
+  mutate(
+    workclass = ifelse(
+      is.na(workclass),        # 여전히 NA라면
+      get_mode(workclass),     # 같은 그룹 내 최빈값으로 대체
+      workclass
+    ),
+    occupation = ifelse(
+      is.na(occupation),       # 여전히 NA라면
+      get_mode(occupation),    # 같은 그룹 내 최빈값으로 대체
+      occupation
+    )
+  ) %>%
+  ungroup()
+#--------------------------------------------------------
+# added cause row has two na values
+data$workclass[data$age == 52 & data$sex == "Female" &
+               is.na(data$workclass)] <- "Private"
 
-unique(data$occupation)
+data$occupation[data$age == 52 & data$sex == "Female" &
+                is.na(data$occupation)] <- "Prof-specialty"
+#----------------------------------------------------------
+data$workclass <- factor(data$workclass)
+data$occupation <- factor(data$occupation)
+
+
+
+
+
+#Check if there is remaining nNA values in workclass and occupation
+
+sum(is.na(data$workclass))    
+sum(is.na(data$occupation))    
+
+# view rows where the workclass value is NA 
+data %>%
+  filter(is.na(workclass))
+
+# view rows where the occupation value is NA
+data %>%
+  filter(is.na(occupation))
+
+#there is one person who has both NA in workclass and occupation
+# -> add code to fill the suitable value
+#--------------------------------------------------------------------
+# added cause row has two na values
+#data$workclass[data$age == 52 & data$sex == "Female" &
+               #is.na(data$workclass)] <- "Private"
+
+#data$occupation[data$age == 52 & data$sex == "Female" &
+                #is.na(data$occupation)] <- "Prof-specialty"
+#--------------------------------------------------------------------
+
+
+
 ```
 
-#Step 2
+### Check the redundancy of the education and education-num columns : analyse the redundacy and apply the appropriate manipulations
+
+```{r}
+edu_relation <- data %>%
+  group_by(education, education.num) %>%
+  summarise(count = n())
+
+edu_relation
 
 
+data <- data %>% select(-education)
+#easy to use in modeling
 
+```
 
+#Categorical variables : Some categorical variables may contain leading or trailing whitespace. Clean these columns.x
 
+```{r}
+data[] <- lapply(data, function(x) {         
+  if (is.character(x)) trimws(x) else x     
+})
 
+```
 
+# Step 2: Feature Transformation and Engineering
 
+### Grouping Categories
 
+```{r}
+unique(data$native.country)
 
+data$native.country[data$native.country != "United-States"] <- "Other"
 
+data$native.country[is.na(data$native.country)] <- "Other"
 
+data$native.country <- factor(data$native.country)
 
+table(data$native.country)
 
+```
+
+### Target Transformantion
+
+```{r}
+unique(data$income)
+
+data$income <- ifelse(data$income == ">50K", 1, 0)
+
+data$income <- as.numeric(data$income)
+
+table(data$income)
+
+```
+
+### Age Discretization
 
 
 
