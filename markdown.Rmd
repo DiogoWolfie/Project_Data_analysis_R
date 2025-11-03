@@ -211,90 +211,37 @@ data %>%
   filter(is.na(occupation))
 ```
 
-```{r}
-# # Handle the missing values using the most frequent value of each column
-# 
-# # Custom function to calculate the most frequent value
-# get_mode <- function(x) {
-#   x <- na.omit(x)
-#   ux <- unique(x)
-#   ux[which.max(tabulate(match(x, ux)))]
-# }
-# 
-# 
-# 
-# # Fill the remaining missing values using the mode within each group (education + sex + marital.status)
-# 
-# data <- data %>%
-#   group_by(education, sex, marital.status) %>%
-#   mutate(
-#     workclass = ifelse(
-#       is.na(workclass),        # 여전히 NA라면
-#       get_mode(workclass),     # 같은 그룹 내 최빈값으로 대체
-#       workclass
-#     ),
-#     occupation = ifelse(
-#       is.na(occupation),       # 여전히 NA라면
-#       get_mode(occupation),    # 같은 그룹 내 최빈값으로 대체
-#       occupation
-#     )
-#   ) %>%
-#   ungroup()
-# #--------------------------------------------------------
-# # added cause row has two na values
-# data$workclass[data$age == 52 & data$sex == "Female" &
-#                is.na(data$workclass)] <- "Private"
-# 
-# data$occupation[data$age == 52 & data$sex == "Female" &
-#                 is.na(data$occupation)] <- "Prof-specialty"
-# #----------------------------------------------------------
-# data$workclass <- factor(data$workclass)
-# data$occupation <- factor(data$occupation)
-# 
-# 
-# 
-# 
-# 
-# #Check if there is remaining nNA values in workclass and occupation
-# 
-# sum(is.na(data$workclass))    
-# sum(is.na(data$occupation))    
-# 
-# # view rows where the workclass value is NA 
-# data %>%
-#   filter(is.na(workclass))
-# 
-# # view rows where the occupation value is NA
-# data %>%
-#   filter(is.na(occupation))
-# 
-# #there is one person who has both NA in workclass and occupation
-# # -> add code to fill the suitable value
-# #--------------------------------------------------------------------
-# # added cause row has two na values
-# #data$workclass[data$age == 52 & data$sex == "Female" &
-#                #is.na(data$workclass)] <- "Private"
-# 
-# #data$occupation[data$age == 52 & data$sex == "Female" &
-#                 #is.na(data$occupation)] <- "Prof-specialty"
-# #--------------------------------------------------------------------
-
-
-
-```
-
 ### Check the redundancy of the education and education-num columns : analyse the redundacy and apply the appropriate manipulations
 
 ```{r}
+#this code here is wrong
 edu_relation <- data %>%
   group_by(education, education.num) %>%
   summarise(count = n())
 
 edu_relation
 
-
+#this is ok
 data <- select(data, -education)
 #easy to use in modeling
+
+```
+
+```{r}
+stack(sort(colSums(is.na(data)), decreasing = TRUE))
+#
+
+table_native_country <- count(data, native.country, name = "frequency") %>%
+  arrange(desc(frequency))
+
+table_native_country
+```
+
+Since the vast majority of native.country values ​​are United States, we will replace the missing values ​​with this value, without making major changes to the table.
+
+```{r}
+data[is.na(data[["native.country"]]), "native.country"] <- "United-States"
+sum(is.na(data[["native.country"]]))
 
 ```
 
@@ -306,10 +253,6 @@ data %>%
 
 ```
 
-```{r}
-colnames(data)
-```
-
 # Step 2: Feature Transformation and Engineering
 
 ### Grouping Categories
@@ -318,8 +261,6 @@ colnames(data)
 unique(data$native.country)
 
 data$native.country[data$native.country != "United-States"] <- "Other"
-
-data$native.country[is.na(data$native.country)] <- "Other"
 
 data$native.country <- factor(data$native.country)
 
@@ -341,3 +282,58 @@ table(data$income)
 ```
 
 ### Age Discretization
+
+```{r}
+summary(data$age)
+
+```
+
+```{r}
+data <- data %>%
+  mutate(
+    AgeGroup = case_when(
+      is.na(age) ~ NA_character_,
+      age <= 28 ~ "Young",        # 1º quartil
+      age <= 48 ~ "Adult",        # between Q1 and Q3
+      TRUE ~ "Senior"             # above the Q3
+    ),
+    AgeGroup = factor(AgeGroup, levels = c("Young", "Adult", "Senior"))
+  )
+
+# ver distribuição
+table(data$AgeGroup)
+
+```
+
+```{r}
+prop.table(table(data$AgeGroup, data$income), margin = 1)
+table(data$AgeGroup, data$income)
+```
+
+```{r}
+data <- data %>%
+  mutate(net_capital = capital.gain - capital.loss)
+data[,"net_capital"]
+```
+
+Spearman's correlation measures the monotonic association between two variables—that is, whether one tends to increase when the other increases, without assuming linearity.
+
+```{r}
+# correlação
+cor.test(data$net_capital, as.numeric(data$income), method = "spearman")
+
+```
+
+```{r}
+summary_capital <- data %>%
+  group_by(AgeGroup, income) %>%
+  summarise(
+    positive = sum(net_capital > 0, na.rm = TRUE),
+    zero     = sum(net_capital == 0, na.rm = TRUE),
+    negative = sum(net_capital < 0, na.rm = TRUE),
+    total    = n(),
+    .groups = "drop"
+  )
+
+summary_capital
+```
