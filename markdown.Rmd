@@ -337,3 +337,65 @@ summary_capital <- data %>%
 
 summary_capital
 ```
+
+```{r}
+colnames(data)
+```
+
+# Step 3: Visualization and Exploration
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(scales) # para percentuais e formatação
+
+edu_income <- data %>%
+  group_by(education.num) %>%
+  summarise(
+    n = n(),
+    n_high = sum(income == 1),
+    prop_high = n_high / n
+  ) %>%
+  arrange(education.num)
+
+ggplot(edu_income, aes(x = factor(education.num), y = prop_high)) +
+  geom_col() +
+  geom_text(aes(label = percent(prop_high, accuracy = 0.1)), vjust = -0.5, size = 3) +
+  scale_y_continuous(labels = percent_format(accuracy = 1), limits = c(0,1), expand = expansion(c(0,0.05))) +
+  labs(x = "education.num", y = "Proportion >50K", title = "Proportion of >50K for education-num") +
+  theme_minimal()
+
+
+```
+
+```{r}
+ggplot(data, aes(x = income, y = hours.per.week)) +
+  geom_violin(trim = TRUE) +
+  stat_summary(fun = median, geom = "point", size = 2, color = "black") +
+  coord_flip() +
+  labs(title = "Violin: hours-per-week por income", x = "Income", y = "Horas por semana") +
+  theme_minimal()
+
+```
+
+```{r}
+ggplot(data, aes(x = marital.status, fill = factor(income))) +
+  geom_bar(position = "fill") +
+  scale_y_continuous(labels = percent_format(accuracy = 1)) +
+  coord_flip() +
+  labs(
+    x = "Civil State",
+    y = "Proportion within the group",
+    fill = "Income (0 = ≤50K, 1 = >50K)",
+    title = "Impact of marital status on income"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+ggplot(data, aes(x = age)) +
+  geom_histogram(bins = 30, alpha = 0.8) +
+  facet_wrap(~ income) +
+  labs(title = "Distribuição de idade por classe de renda", x = "Idade", y = "Contagem") +
+  theme_minimal()
+```
