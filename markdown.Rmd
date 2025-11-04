@@ -369,11 +369,11 @@ ggplot(edu_income, aes(x = factor(education.num), y = prop_high)) +
 ```
 
 ```{r}
-ggplot(data, aes(x = income, y = hours.per.week)) +
+ggplot(data, aes(x = factor(income), y = hours.per.week)) +
   geom_violin(trim = TRUE) +
   stat_summary(fun = median, geom = "point", size = 2, color = "black") +
   coord_flip() +
-  labs(title = "Violin: hours-per-week por income", x = "Income", y = "Horas por semana") +
+  labs(title = "Violin: hours-per-week por income", x = "Income", y = "Hours per week") +
   theme_minimal()
 
 ```
@@ -396,6 +396,59 @@ ggplot(data, aes(x = marital.status, fill = factor(income))) +
 ggplot(data, aes(x = age)) +
   geom_histogram(bins = 30, alpha = 0.8) +
   facet_wrap(~ income) +
-  labs(title = "Distribuição de idade por classe de renda", x = "Idade", y = "Contagem") +
+  labs(title = "Age distribution by income class", x = "Age", y = "Count") +
+  theme_minimal()
+```
+
+```{r}
+ggplot(data %>% filter(age & hours.per.week), aes(x = age, y = hours.per.week, color = income)) +
+  geom_point(alpha = 0.3, size = 0.8) +
+  geom_smooth(method = "loess", se = FALSE) +
+  labs(title = "Age x hours per week (by income)", x = "Age", y = "Hours per week") +
+  theme_minimal()
+```
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(scales)
+
+# Calcular a proporção de pessoas com income = 1 por sexo e nível educacional
+edu_sex_income <- data %>%
+  group_by(sex, education.num) %>%
+  summarise(
+    total = n(),
+    high_income = sum(income == 1),
+    prop_high = high_income / total,
+    .groups = "drop"
+  )
+
+# Gráfico de barras lado a lado
+ggplot(edu_sex_income, aes(x = factor(education.num), y = prop_high, fill = sex)) +
+  geom_col(position = "dodge") +
+  scale_y_continuous(labels = percent_format(accuracy = 1)) +
+  labs(
+    title = "Proportion of people with income >50K by gender and education level.",
+    x = "Education Level (education.num)",
+    y = "Proportion with income >50K",
+    fill = "Sex"
+  ) +
+  theme_minimal()
+
+
+```
+
+```{r}
+#same grafic that the above. Just a diferent whay to see it
+ggplot(edu_sex_income, aes(x = education.num, y = prop_high, color = sex)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  scale_y_continuous(labels = percent_format(accuracy = 1)) +
+  labs(
+    title = "Income >50K by sex and education level",
+    x = "Education Level",
+    y = "Proportion with income >50K",
+    color = "Sex"
+  ) +
   theme_minimal()
 ```
