@@ -452,3 +452,168 @@ ggplot(edu_sex_income, aes(x = education.num, y = prop_high, color = sex)) +
   ) +
   theme_minimal()
 ```
+
+```{r}
+edu_race_income <- data %>%
+  group_by(race, education.num) %>%
+  summarise(
+    total = n(),
+    high_income = sum(income == 1),
+    prop_high = high_income / total,
+    .groups = "drop"
+  )
+
+ggplot(edu_race_income, aes(x = education.num, y = prop_high, color = race)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  scale_y_continuous(labels = percent_format(accuracy = 1)) +
+  labs(
+    title = "Income >50K by race and education level",
+    x = "Education Level",
+    y = "Proportion with income >50K",
+    color = "Sex"
+  ) +
+  theme_minimal()
+
+```
+
+# Step 4: Modeling and Prediction
+
+```{r}
+install.packages("fastDummies")
+```
+
+```{r}
+library(fastDummies)
+
+#verificar colunas categóricas
+data_chars <- data %>% select(where(is.character))
+cat_cols
+```
+
+```{r}
+#create dummies variables
+data_dummies <- fastDummies::dummy_cols(
+  data,
+  select_columns = cat_cols,
+  remove_first_dummy = TRUE, #evita multicolinearidade
+  remove_selected_columns = TRUE #remove the original columns
+)
+```
+
+```{r}
+str(data_dummies)
+```
+
+```{r}
+install.packages("caret")
+```
+
+```{r}
+#logistic regression
+set.seed(42)
+
+n_rows <- nrow(data_dummies)
+train_index <- sample(1:n_rows, 0.8*n_rows)
+
+train <- data_dummies[train_index,]
+test <- data_dummies[-train_index,]
+```
+
+```{r}
+#training the model
+#glm - generalized linear model
+train$income <- as.factor(train$income)
+model_log <- glm(income~ ., data=train,family = binomial(link = "logit"))
+summary(model_log)
+```
+
+```{r}
+pred_prob <- predict(model_log,newdata = test,type="response")
+pred_class <- ifelse(pred_prob>0.5,1,0) #prob to class 1 or 0
+```
+
+```{r}
+# Matriz de confusão
+table(Predict = pred_class, Real = test$income)
+
+# Acurácia
+accuracy_log <- mean(pred_class == test$income)
+accuracy_log
+```
+
+Random Forest
+
+```{r}
+install.packages("randomForest")
+```
+
+```{r}
+#random Forest
+library(randomForest)
+
+set.seed(42)
+
+#correct names
+names(train) <- make.names(names(train))
+names(test)  <- make.names(names(test))
+
+model_rf <- randomForest(
+  income ~ .,
+  data = train,
+  ntree = 500, #number of trees
+  mtry = (sqrt(ncol(train)-1)), #number of variables tested by division
+  importance=TRUE
+)
+model_rf
+```
+
+```{r}
+pred_rf_class <- predict(model_rf, newdata = test)
+pred_rf_prob <- predict(model_rf, newdata = test, type='prob')[,2]
+conf_rf <- table(Predict = pred_rf_class, Real = test$income)
+accuracy_rf <- mean(pred_rf == test$income)
+accuracy_rf
+conf_rf
+# varImpPlot(model_rf, main = "Importance of variables")
+```
+
+```{r}
+cat("Accuracy Logistic:", round(accuracy_log, 3), "\n")
+cat("Accuracy Random Forest: ", round(accuracy_rf,3), "\n")
+```
+
+```{r}
+# For RL
+confusionMatrix(as.factor(pred_class), as.factor(test$income), positive = "1")
+
+# Curva ROC e AUC
+roc_log <- roc(test$income, pred_prob)
+plot(roc_log, col = "blue", main = "Curva ROC - Regressão Logística")
+auc_log <- auc(roc_log)
+auc_log
+```
+
+```{r}
+#confusion matrix and AUC for RF
+library(caret)
+library(pROC)
+
+confusionMatrix(pred_rf_class, as.factor(test$income), positive="1")
+roc_rf <- roc(as.numeric(test$income), as.numeric(pred_rf_prob))
+plot(roc_rf, col = "darkgreen", main = "ROC Curve - Random Forest")
+auc(roc_rf)
+```
+
+```{r}
+table(pred_rf)
+```
+
+```{r}
+
+importance_df <- as.data.frame(importance(model_rf))
+top5_vars <- importance_df %>%
+  arrange(desc(MeanDecreaseGini)) %>%
+  head(5)
+top5_vars
+```
