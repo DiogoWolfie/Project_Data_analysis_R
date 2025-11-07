@@ -1,16 +1,26 @@
 ---
 title: "new project"
-output: html_document
+author: "Team idk"
 date: "2025-10-22"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    theme: readable
 ---
+
+# PROJECT 2: UCI Adult - Analyzing Income Factors
+
+**Goal**: Identify which factors predict whether a person earns over \$50K using the UCI Adult census dataset.
 
 ## Step 1: Data cleaning and preparation
 
-## 1. Importing the data
+### 1. Importing the data
 
-Remembering to replace the "?" values ​​in the table with NA using na.strings
+Load the dataset and convert "?" into NA to properly mark missing values.
 
-```{r}
+```{r, echo=FALSE}
 
 library(dplyr)
 
@@ -21,58 +31,62 @@ head(data)
 
 ```
 
-```{r}
+### 2. Workclass and occupation columns: Handle the missing values
+
+Check the distribution of workclass and occupation (excluding missing values).
+
+```{r, echo=FALSE}
+data_sum_wc <- data %>%
+  filter(!is.na(workclass)) %>%
+  count(workclass, sort=TRUE)
+
 data_sum_occ <- data %>%
   filter(!is.na(occupation)) %>%
   count(occupation, sort=TRUE)
 
+data_sum_wc
 data_sum_occ
 ```
 
-## 2. Workclass and occupation columns:
+Identify how many missing values exist overall and by column.
 
-## Handle the missing values
+```{r, echo=FALSE}
 
-First, let's see how many values ​​are missing in the table.
-
-```{r}
-# see for columns separated
 stack(sort(colSums(is.na(data)), decreasing = TRUE))
-# see how many "NA value" is in the data frame
-sum(is.na(data))
-# 4262 at total
-# 1836 in workclass / 1843 in occupation
-
 
 
 ```
 
-People over 60 can be considered retired, and those under 18 can be considered to have never worked. But first, let's see if the number of these groups is relevant.
+Since people over 60 and under 18 usually do not have an occupation, we count how many of them are affected.
 
-```{r}
-# see how many na value is oder than 60
-sum(is.na(data$workclass) & data$age >= 60)
-# see how many na value is younger than 18
-sum(is.na(data$workclass) & data$age <= 18)
-# under 18 = / workclass = neverworked / occupation = student
+```{r, echo=FALSE}
+
+na_over_60_work = sum(is.na(data$workclass) & data$age >= 60)
+
+na_under_18_work = sum(is.na(data$workclass) & data$age <= 18)
+
+na_over_60_occ = sum(is.na(data$occupation) & data$age >= 60)
+
+na_under_18_occ = sum(is.na(data$occupation) & data$age <= 18)
+
+data.frame(
+  Variable = c("Workclass (>=60)", "Workclass (<=18)", "Occupation (>=60)", "Occupation (<=18)"),
+  Missing_Count = c(na_over_60_work, na_under_18_work, na_over_60_occ, na_under_18_occ)
+)
+
+
 ```
 
-```{r}
-# see how many na value is oder than 60
-sum(is.na(data$occupation) & data$age >= 60)
-# see how many na value is younger than 18
-sum(is.na(data$occupation) & data$age <= 18)
-# under 18 = / workclass = neverworked / occupation = student
-```
+There is a difference of four individuals under 18, so we check their data.
 
-```{r}
+```{r, echo=FALSE}
 filter(data, is.na(data$occupation), data$age <= 18, !is.na(data$workclass))
-# the cworkclass is never-worked for these guys
+# the workclass is never-worked for these guys
 ```
 
-So far I can classify all people under 18 as students who have never worked.
+So far I can classify all people under 18 as students who have never worked. Therefore, for all individuals under 18, the workclass is set to "Never-worked" and the occupation is set to "Student".
 
-```{r}
+```{r, echo=FALSE}
 #student
 data <- data %>%
   mutate(
@@ -81,20 +95,12 @@ data <- data %>%
   )
 ```
 
-Since all people over 60 years old do not have workclass and occupation information, we can consider them all as retired.
+Also, all people over 60 years old do not have workclass and occupation information, we can consider them all as retired.
 
-I'll leave it commented for now, as it doesn't discuss the relationship with the team.
+However, according to research, the average retirement age is around 65 for men and 63 for women; therefore, we set the workclass and occupation of individuals at or above these ages to "Retired."
 
-```{r}
-#data <- data %>%
-#  mutate(
-#    workclass <- if_else(age >=60 & is.na(workclass), "Retired", workclass),
-#     occupation = if_else(age >=60 & is.na(occupation), "Student", occupation)
-#  )
-# over 65 male, over 63 female => workclass = retired / occupation = retired
-# under 18 => / workclass = neverworked / occupation = student
+```{r, echo=FALSE}
 
-#retired
 data$workclass <- ifelse(
   (data$sex == "Male" & data$age >= 65 & is.na(data$workclass)) |
   (data$sex == "Female" & data$age >= 63 & is.na(data$workclass)),
@@ -108,11 +114,12 @@ data$occupation <- ifelse(
 
 ```
 
-Checking whether variables such as sex, age and education have a correlation with the individual's occupation and work class.
+Check whether variables such as sex, age and education are related to a person's occupation or workclass using Chi-square and Cramér’s V. ---- If you want, you can add some words about this chunk.
 
-```{r}
+```{r, echo=FALSE}
 #install.packages("rcompanion")
 library(rcompanion)
+
 
 chi_square_summary <- function(data, target) {
   results <- data.frame(var = character(), p_value = numeric(), cramerV = numeric(), stringsAsFactors = FALSE)
@@ -132,31 +139,19 @@ chi_square_summary <- function(data, target) {
   }
   results[order(results$cramerV, decreasing = TRUE), ]
 }
-
-
-```
-
-```{r}
 chi_square_summary(data, "workclass")
-```
-
-```{r}
 chi_square_summary(data, "occupation")
 ```
 
-No other categorical variable actually correlates with workclass. Considering that the vast majority of workclass values ​​are Private, we'll replace the missing values ​​with private.\
+No other categorical variables show a significant relationship with workclass. Since most entries in this column are labeled "Private", the missing values are replaced with this category for consistency.
 
-I'll leave it commented for now, as it doesn't discuss the relationship with the team.
-
-```{r}
+```{r, echo=FALSE}
 data$workclass[is.na(data$workclass)] <- "Private"
 ```
 
-We realize that only the variable sex, and perhaps income, can be valid for separating and assembling the rest of the variables in occupation
+We found that only the variables sex and possibly income are relevant for distinguishing or structuring the remaining values in occupation. Therefore, we use these two variables to fill in the missing values for occupation.
 
-### Handle the missing values using the most frequent value of each column
-
-```{r}
+```{r, echo=FALSE}
 
 set.seed(42)
 # tabela global para fallback
@@ -190,7 +185,9 @@ data <- data %>%
 
 ```
 
-```{r}
+Check the distribution of occupation again to see if the values are too concentrated in one category.
+
+```{r, echo=FALSE}
 data_sum_occ2 <- data %>%
   filter(!is.na(occupation)) %>%
   count(occupation, sort=TRUE)
@@ -198,7 +195,9 @@ data_sum_occ2 <- data %>%
 data_sum_occ2
 ```
 
-```{r}
+check if there is any NA value is in workclass and occupation.
+
+```{r, echo=FALSE}
 sum(is.na(data$workclass))
 sum(is.na(data$occupation))
 
@@ -211,25 +210,58 @@ data %>%
   filter(is.na(occupation))
 ```
 
-### Check the redundancy of the education and education-num columns : analyse the redundacy and apply the appropriate manipulations
+### 3. Check the redundancy of the education and education-num columns : analyse the redundacy and apply the appropriate manipulations
 
-```{r}
-#this code here is wrong
+Create a relationship table between education and education.num, and check whether each pair has a one-to-one mapping.
+
+```{r, echo=FALSE}
+
 edu_relation <- data %>%
-  group_by(education, education.num) %>%
-  summarise(count = n())
+  filter(!is.na(education), !is.na(education.num)) %>%
+  distinct(education, education.num) %>%
+  arrange(education.num, education)
 
 edu_relation
 
-#this is ok
+edu_to_num <- edu_relation %>%
+  count(education) %>%
+  filter(n > 1)
+
+num_to_edu <- edu_relation %>%
+  count(education.num) %>%
+  filter(n > 1)
+
+one_to_one <- nrow(edu_to_num) == 0 & nrow(num_to_edu) == 0
+
+one_to_one
+```
+
+Since the two variables represent the same information, we keep education.num, which is more suitable for modeling, and remove the education column.
+
+```{r, echo=FALSE}
+
 data <- select(data, -education)
-#easy to use in modeling
 
 ```
 
-```{r}
-stack(sort(colSums(is.na(data)), decreasing = TRUE))
-#
+### 4. Categorical variables : Some categorical variables may contain leading or trailing whitespace. Clean these columns.x
+
+Remove leading and trailing whitespaces from all character-type categorical variables.
+
+```{r, echo=FALSE}
+data %>%
+  mutate_if(is.character, trimws)
+
+```
+
+## Step 2: Feature Transformation and Engineering
+
+### 1. Grouping Categories: The native-country variable has many unique categories. Group all countries outside of the "United-States" into a single "Other" category to simplify the model.
+
+Check how many categories are in native-country variable and frequency
+
+```{r, echo=FALSE}
+unique(data$native.country)
 
 table_native_country <- count(data, native.country, name = "frequency") %>%
   arrange(desc(frequency))
@@ -237,28 +269,9 @@ table_native_country <- count(data, native.country, name = "frequency") %>%
 table_native_country
 ```
 
-Since the vast majority of native.country values ​​are United States, we will replace the missing values ​​with this value, without making major changes to the table.
+Since the vast majority of native.country values are United States, we will replace the missing values with this value, without making major changes to the table.
 
-```{r}
-data[is.na(data[["native.country"]]), "native.country"] <- "United-States"
-sum(is.na(data[["native.country"]]))
-
-```
-
-#Categorical variables : Some categorical variables may contain leading or trailing whitespace. Clean these columns.x
-
-```{r}
-data %>%
-  mutate_if(is.character, trimws)
-
-```
-
-# Step 2: Feature Transformation and Engineering
-
-### Grouping Categories
-
-```{r}
-unique(data$native.country)
+```{r, echo= FALSE}
 
 data$native.country[data$native.country != "United-States"] <- "Other"
 
@@ -268,9 +281,11 @@ table(data$native.country)
 
 ```
 
-### Target Transformantion
+### 2. Target Transformantion: The income variable is text-based. Convert it into a binary variable (0 for \<=50K and 1 for \>50K).
 
-```{r}
+Convert income variables into 0 or 1.
+
+```{r, echo=FALSE}
 unique(data$income)
 
 data$income <- ifelse(data$income == ">50K", 1, 0)
@@ -281,50 +296,64 @@ table(data$income)
 
 ```
 
-### Age Discretization
+### 3. Age Discretization: Transform the continuous age variable into a categorical AgeGroup ('Young', 'Adult', 'Senior') to see if specific age groups have different income levels.
 
-```{r}
+First, check the summary statistics of the age variable.
+
+```{r, echo=FALSE}
 summary(data$age)
 
 ```
 
-```{r}
+Based on the summary statistics, we defined age groups as follows: values up to the 1st quartile as Young, between the 1st and 3rd quartiles as Adult, and above the 3rd quartile as Senior.
+
+```{r, echo=FALSE}
 data <- data %>%
   mutate(
     AgeGroup = case_when(
       is.na(age) ~ NA_character_,
-      age <= 28 ~ "Young",        # 1º quartil
+      age <= 28 ~ "Young",        # till Q1
       age <= 48 ~ "Adult",        # between Q1 and Q3
       TRUE ~ "Senior"             # above the Q3
     ),
     AgeGroup = factor(AgeGroup, levels = c("Young", "Adult", "Senior"))
   )
 
-# ver distribuição
 table(data$AgeGroup)
 
 ```
 
-```{r}
+Check if specific age groups have different income levels.
+
+```{r, echo=FALSE}
 prop.table(table(data$AgeGroup, data$income), margin = 1)
 table(data$AgeGroup, data$income)
 ```
 
-```{r}
+### 4. Analyzing Capital Gains/Losses: Create a net-capital variable by subtracting. Analyze if this new feature is a good predictor of income.
+
+Create new column "net_capital"
+
+```{r, echo=FALSE}
 data <- data %>%
   mutate(net_capital = capital.gain - capital.loss)
 data[,"net_capital"]
+colnames(data)
 ```
 
-Spearman's correlation measures the monotonic association between two variables—that is, whether one tends to increase when the other increases, without assuming linearity.
+Analyze net_capital is a good predictor of income by using Spearman's correlation Spearman's correlation measures the monotonic association between two variables-that is, whether one tends to increase when the other increases, without assuming linearity.
 
-```{r}
+```{r, echo=FALSE}
 # correlação
 cor.test(data$net_capital, as.numeric(data$income), method = "spearman")
 
 ```
 
-```{r}
+The Spearman correlation between net_capital and income is 0.137, indicating a weak but statistically significant positive relationship. Individuals with higher net capital tend to have slightly higher income levels.
+
+#### can't understand about code below
+
+```{r, echo=FALSE}
 summary_capital <- data %>%
   group_by(AgeGroup, income) %>%
   summarise(
@@ -338,13 +367,11 @@ summary_capital <- data %>%
 summary_capital
 ```
 
-```{r}
-colnames(data)
-```
+## Step 3: Visualization and Exploration
 
-# Step 3: Visualization and Exploration
+### 1. Income and Education Level: Visualize the proportion of people earning over \$50K for each level of education-num using a bar diagram.
 
-```{r}
+```{r, echo=FALSE}
 library(dplyr)
 library(ggplot2)
 library(scales) # para percentuais e formatação
@@ -368,7 +395,13 @@ ggplot(edu_income, aes(x = factor(education.num), y = prop_high)) +
 
 ```
 
-```{r}
+**What it shows**: Proportion of individuals earning > $50K by education.num. **Takeaway**: Higher education levels are associated with a higher share of high-income individuals.
+
+### 2. Work Hours and Income: Compare the distribution of hours-per-week between the two income classes
+
+Using geom_violin()
+
+```{r, echo=FALSE}
 ggplot(data, aes(x = factor(income), y = hours.per.week)) +
   geom_violin(trim = TRUE) +
   stat_summary(fun = median, geom = "point", size = 2, color = "black") +
@@ -378,7 +411,11 @@ ggplot(data, aes(x = factor(income), y = hours.per.week)) +
 
 ```
 
-```{r}
+**What it shows**: Distribution of hours.per.week across income classes. **Takeaway**: The >$50K group generally works longer hours per week.
+
+### 3. Impact of Marital Status: Visualize the relationship between marital-status and income.
+
+```{r, echo=FALSE}
 ggplot(data, aes(x = marital.status, fill = factor(income))) +
   geom_bar(position = "fill") +
   scale_y_continuous(labels = percent_format(accuracy = 1)) +
@@ -392,7 +429,11 @@ ggplot(data, aes(x = marital.status, fill = factor(income))) +
   theme_minimal()
 ```
 
-```{r}
+**What it shows**: Within each marital.status, the proportion of ≤/> $50K. **Takeaway** Married individuals (esp. with spouse present) show higher high-income shares.
+
+### 4. Age Distributions: Create visualisations of the age variable, facted by the income class, to observe distributional differences.
+
+```{r, echo=FALSE}
 ggplot(data, aes(x = age)) +
   geom_histogram(bins = 30, alpha = 0.8) +
   facet_wrap(~ income) +
@@ -400,13 +441,41 @@ ggplot(data, aes(x = age)) +
   theme_minimal()
 ```
 
-```{r}
+**What it shows**: age histograms faceted by income class. **Takeaway** High-income individuals concentrate more in middle ages.
+
+### 5. Add 2 visualisations of your liking.
+
+1.  Age vs Work Hours: explore the relationship between age and hours-per-week by income.
+
+```{r, echo=FALSE}
+ggplot(data, aes(x = AgeGroup, y = hours.per.week, fill = factor(income))) +
+  geom_boxplot(alpha = 0.7, outlier.shape = NA) +
+  scale_fill_manual(values = c("#6BAED6", "#FD8D3C"),
+                    name = "Income",
+                    labels = c("≤50K", ">50K")) +
+  labs(
+    title = "Work Hours Distribution by Age Group and Income",
+    x = "Age Group",
+    y = "Hours per Week"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "top")
+```
+
+**What it shows**: hours.per.week distribution by AgeGroup and income.
+**Takeaway**: Seniors work fewer hours; >$50K consistently shows higher hours across groups.
+
+```{r, echo=FALSE}
+#### for me it's too hard to understand the pics so I changed it above
 ggplot(data %>% filter(age & hours.per.week), aes(x = age, y = hours.per.week, color = income)) +
   geom_point(alpha = 0.3, size = 0.8) +
   geom_smooth(method = "loess", se = FALSE) +
   labs(title = "Age x hours per week (by income)", x = "Age", y = "Hours per week") +
   theme_minimal()
 ```
+
+
+2. Income Distribution (>$50k) by Gender and Education Level
 
 ```{r}
 library(dplyr)
@@ -438,8 +507,13 @@ ggplot(edu_sex_income, aes(x = factor(education.num), y = prop_high, fill = sex)
 
 ```
 
-```{r}
-#same grafic that the above. Just a diferent whay to see it
+**What it shows**: Proportion of >$50K by gender over education.num.
+**Takeaway**: Both genders benefit from education; males remain higher across levels.
+
+
+same grafic that the above. Just a diferent whay to see it.
+
+```{r, echo=FALSE}
 ggplot(edu_sex_income, aes(x = education.num, y = prop_high, color = sex)) +
   geom_line(linewidth = 1) +
   geom_point(size = 2) +
@@ -453,7 +527,9 @@ ggplot(edu_sex_income, aes(x = education.num, y = prop_high, color = sex)) +
   theme_minimal()
 ```
 
-```{r}
+3.  Income Distribution (\>50k) across Races and Education Levels.
+
+```{r, echo=FALSE}
 edu_race_income <- data %>%
   group_by(race, education.num) %>%
   summarise(
@@ -471,27 +547,38 @@ ggplot(edu_race_income, aes(x = education.num, y = prop_high, color = race)) +
     title = "Income >50K by race and education level",
     x = "Education Level",
     y = "Proportion with income >50K",
-    color = "Sex"
+    color = "Race"
   ) +
   theme_minimal()
 
 ```
 
-# Step 4: Modeling and Prediction
+**What it shows**: Proportion of >$50K across races over education.num.
+**Takeaway**: Education lifts all races, but racial disparities remain visible.
 
-```{r}
-install.packages("fastDummies")
-```
+## Step 4: Modeling and Prediction
 
-```{r}
+### 1. Preparing Data for Modeling: Convert all remaining categorical variables into "dummy" variables (one-hot encoding) so they can be used by the models.
+
+Install Required Packages.
+
+```{r, echo=FALSE}
+#install.packages("fastDummies")
 library(fastDummies)
-
-#verificar colunas categóricas
-data_chars <- data %>% select(where(is.character))
-cat_cols
+library(dplyr)
 ```
 
-```{r}
+Verify categorical columns.
+
+```{r, echo=FALSE}
+
+data_chars <- data %>% select(where(is.character))
+cat_cols = names(data_chars)
+```
+
+Convert categorical variables into dummy (numeric) variables using one-hot encoding. The first dummy column is removed to prevent multicollinearity.
+
+```{r, echo=FALSE}
 #create dummies variables
 data_dummies <- fastDummies::dummy_cols(
   data,
@@ -501,15 +588,24 @@ data_dummies <- fastDummies::dummy_cols(
 )
 ```
 
-```{r}
+Check the new data structure.
+
+```{r, echo=FALSE}
 str(data_dummies)
 ```
 
-```{r}
-install.packages("caret")
+Install and prepare Modeling Packages.
+
+```{r, echo=FALSE}
+#install.packages("caret")
 ```
 
-```{r}
+### 2. Logistic Regression: Train a logistic regression model to predict the income class. This is a good baseline model for understanding the influence of each variable.
+
+Split the Dataset into Training and Test Sets.
+
+```{r, echo=FALSE}
+library(caret)
 #logistic regression
 set.seed(42)
 
@@ -518,9 +614,15 @@ train_index <- sample(1:n_rows, 0.8*n_rows)
 
 train <- data_dummies[train_index,]
 test <- data_dummies[-train_index,]
+
+train <- na.omit(train)
+test <- na.omit(test)
+
 ```
 
-```{r}
+Building the Logistic Regression Model: Train a logistic regression model using all available predictors to estimate the probability of earning more than 50K.
+
+```{r, echo=FALSE}
 #training the model
 #glm - generalized linear model
 train$income <- as.factor(train$income)
@@ -528,13 +630,17 @@ model_log <- glm(income~ ., data=train,family = binomial(link = "logit"))
 summary(model_log)
 ```
 
-```{r}
+Make predictions and Classify Outcomes.
+
+```{r, echo=FALSE}
 pred_prob <- predict(model_log,newdata = test,type="response")
 pred_class <- ifelse(pred_prob>0.5,1,0) #prob to class 1 or 0
 ```
 
-```{r}
-# Matriz de confusão
+Evaluate Logistic Regression Accuracy. Generate a confusion matrix and compute model accuracy to assess predictive performance of logistic regression.
+
+```{r, echo=FALSE}
+# Confusion matrix
 table(Predict = pred_class, Real = test$income)
 
 # Acurácia
@@ -542,15 +648,20 @@ accuracy_log <- mean(pred_class == test$income)
 accuracy_log
 ```
 
-Random Forest
+### 3. Random Forest
 
-```{r}
-install.packages("randomForest")
+Install and loading Random Forest.
+
+```{r, echo=FALSE}
+#install.packages("randomForest")
 ```
 
-```{r}
+Build a Random Forest model using 500 trees to predict income class, and evaluate variable importance during model training.
+
+```{r, echo=FALSE}
 #random Forest
 library(randomForest)
+library(pROC)
 
 set.seed(42)
 
@@ -568,33 +679,41 @@ model_rf <- randomForest(
 model_rf
 ```
 
-```{r}
+Predict income on the test dataset using the Random Forest model and calculate accuracy from the confusion matrix.
+
+```{r, echo=FALSE}
 pred_rf_class <- predict(model_rf, newdata = test)
 pred_rf_prob <- predict(model_rf, newdata = test, type='prob')[,2]
 conf_rf <- table(Predict = pred_rf_class, Real = test$income)
-accuracy_rf <- mean(pred_rf == test$income)
+accuracy_rf <- mean(pred_rf_class == test$income)
 accuracy_rf
 conf_rf
 # varImpPlot(model_rf, main = "Importance of variables")
 ```
 
-```{r}
+Compare the accuracy of logistic regression and random forest to identify which model performs better.
+
+```{r, echo=FALSE}
 cat("Accuracy Logistic:", round(accuracy_log, 3), "\n")
 cat("Accuracy Random Forest: ", round(accuracy_rf,3), "\n")
 ```
 
-```{r}
+Plot the ROC curve and calculate the AUC (Area Under Curve) for logistic regression to evaluate how well the model separates income classes.
+
+```{r, echo=FALSE}
 # For RL
 confusionMatrix(as.factor(pred_class), as.factor(test$income), positive = "1")
 
 # Curva ROC e AUC
 roc_log <- roc(test$income, pred_prob)
-plot(roc_log, col = "blue", main = "Curva ROC - Regressão Logística")
+plot(roc_log, col = "blue", main = "ROC Curve - Logistic Regression")
 auc_log <- auc(roc_log)
 auc_log
 ```
 
-```{r}
+Evaluating Random Forest: Assess the Random Forest model with confusion matrix, ROC curve, and AUC score to measure predictive performance.
+
+```{r, echo=FALSE}
 #confusion matrix and AUC for RF
 library(caret)
 library(pROC)
@@ -605,11 +724,15 @@ plot(roc_rf, col = "darkgreen", main = "ROC Curve - Random Forest")
 auc(roc_rf)
 ```
 
-```{r}
-table(pred_rf)
+Display Predicted Class Distribution
+
+```{r, echo=FALSE}
+table(pred_rf_class)
 ```
 
-```{r}
+Identify the Most Important Variables.
+
+```{r, echo=FALSE}
 
 importance_df <- as.data.frame(importance(model_rf))
 top5_vars <- importance_df %>%
