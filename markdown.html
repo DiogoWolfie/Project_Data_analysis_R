@@ -422,8 +422,10 @@ Modeling</a></li>
 <div id="project-2-uci-adult---analyzing-income-factors" class="section level1" number="1">
 <h1><span class="header-section-number">1</span> PROJECT 2: UCI Adult -
 Analyzing Income Factors</h1>
-<p><strong>Goal</strong>: Identify which factors predict whether a
-person earns over $50K using the UCI Adult census dataset.</p>
+<p><strong>Goal</strong>: Perform a data analysis project on the UCI
+Adult Census database and, at the end, build a prediction using machine
+learning to predict the income variable based on the other labels in the
+database.</p>
 <div id="step-1-data-cleaning-and-preparation" class="section level2" number="1.1">
 <h2><span class="header-section-number">1.1</span> Step 1: Data cleaning
 and preparation</h2>
@@ -458,11 +460,11 @@ occupation columns: Handling the missing values</h3>
 <p>Check the distribution of workclass and occupation, to understand how
 we will handle the missing values ​​from these classes.</p>
 <p>Both classes have a good distribution of their values. Except for the
-“private” value of the Workclass, whose value exceeds the value of the
-other classes by a factor of 10.</p>
-<p>Identifyng how many missing values exist overall and by column using
-the function is.na and colSumns to count the missing values for each
-column</p>
+“private” value of the Workclass column, whose value exceeds the value
+of the other classes by a factor of 10.</p>
+<p>Identifying how many missing values exist overall and by column using
+the function is.na and colSums to count the missing values for each
+column.</p>
 <p>We find 1843 missing values for the column occupation, 1836 missing
 values for the column workclass and 583 missing values for the column
 native.country.</p>
@@ -528,7 +530,7 @@ education column.</p>
 <h3><span class="header-section-number">1.1.4</span> 4. Categorical
 variables</h3>
 <p>Remove leading and trailing whitespaces from all character-type
-categorical variables.</p>
+categorical variables using the function mutate_if and trimws.</p>
 </div>
 </div>
 <div id="step-2-feature-transformation-and-engineering" class="section level2" number="1.2">
@@ -539,7 +541,7 @@ Transformation and Engineering</h2>
 Categories</h3>
 <p>The native-coutry variable has many unique categories. We group all
 countries outside of the “united - states” into a single cathegory
-called “Other” to simplify de model.</p>
+called “Other”, including the missing values, to simplify de model.</p>
 <p>Checking how many categories are in native-country variable and
 frequency.</p>
 <p>The native-coutry variable has many unique categories. But, how the
@@ -549,13 +551,15 @@ to simplify de model.</p>
 <pre><code>## 
 ##         Other United-States 
 ##          2808         29170</code></pre>
+<p>Here we see the difference in quantity between the two variables.</p>
 </div>
 <div id="target-transformation" class="section level3" number="1.2.2">
 <h3><span class="header-section-number">1.2.2</span> 2. Target
 Transformation</h3>
 <p>The income variable is text-based, so we convert it into a binary
 variable (0 for &lt;= 50k and 1 for &gt;50k)</p>
-<p>Convert income variables into 0 or 1.</p>
+<p>Convert income variables into 0 or 1 and then changing the type to
+numeric.</p>
 </div>
 <div id="age-discretization" class="section level3" number="1.2.3">
 <h3><span class="header-section-number">1.2.3</span> 3. Age
@@ -564,10 +568,15 @@ Discretization</h3>
 “AgeGroup” (Young, Adult and Senior) to see if specific age groups have
 different income levels</p>
 <p>First, check the summary statistics of the age variable.</p>
-<p>Based on the summary statistics, we defined age groups as follows:
-values up to the 1st quartile (28 years) as Young, between the 1st and
-3rd quartiles as Adult, and above the 3rd quartile (48 years) as
-Senior.</p>
+<pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##   17.00   28.00   37.00   38.58   48.00   90.00</code></pre>
+<p>Based on the summary statistics, we defined age groups as
+follows:</p>
+<ul>
+<li><p>Values up to the 1st quartile (28 years) as Young</p></li>
+<li><p>Between the 1st and 3rd quartiles as Adult</p></li>
+<li><p>Above the 3rd quartile (48 years) as Senior.</p></li>
+</ul>
 <p>Check if specific age groups have different income levels.</p>
 <pre><code>##         
 ##                   0          1
@@ -706,13 +715,9 @@ for Modeling</h3>
 <p>Converting all remaining categorical variables into “dummy”
 variables, using one-hot encoding, to use these variables in the machine
 learning models.</p>
-<p>Install Required Packages.</p>
-<p>Verify categorical columns.</p>
-<p>Convert categorical variables into dummy (numeric) variables using
-one-hot encoding. The first dummy column is removed to prevent
-multicollinearity.</p>
-<p>Check the new data structure.</p>
-<p>Install and prepare Modeling Packages.</p>
+<p>The first dummy column is removed to prevent multicollinearity.</p>
+<p>Check the new data structure to see with works.</p>
+<p>Now, we can start the preparation of the modeling.</p>
 </div>
 <div id="logistic-regression" class="section level3" number="1.4.2">
 <h3><span class="header-section-number">1.4.2</span> 2. Logistic
@@ -720,18 +725,22 @@ Regression</h3>
 <p>Training a logistic regression model to predict the income class, for
 understand the influence of each variable.</p>
 <p>Split the Dataset into Training and Test Sets.</p>
-<p>Building the Logistic Regression Model: Train a logistic regression
-model using all available predictors to estimate the probability of
-earning more than 50K.</p>
+<p>Building the Logistic Regression Model, training a logistic
+regression model using all available predictors to estimate the
+probability of earning more than 50K.</p>
 <p>Make predictions and Classify Outcomes.</p>
 <p>Evaluate Logistic Regression Accuracy. Generate a confusion matrix
 and compute model accuracy to assess predictive performance of logistic
 regression.</p>
+<ul>
+<li><div>
 <pre><code>##        Real
 ## Predict    0    1
 ##       0 4568  618
 ##       1  332  908</code></pre>
 <pre><code>## [1] 0.8521631</code></pre>
+</div></li>
+</ul>
 </div>
 <div id="random-forest" class="section level3" number="1.4.3">
 <h3><span class="header-section-number">1.4.3</span> 3. Random

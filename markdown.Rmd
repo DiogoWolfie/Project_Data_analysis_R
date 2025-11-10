@@ -33,7 +33,7 @@ install_if_missing("randomForest")
 
 # PROJECT 2: UCI Adult - Analyzing Income Factors
 
-**Goal**: Identify which factors predict whether a person earns over \$50K using the UCI Adult census dataset.
+**Goal**: Perform a data analysis project on the UCI Adult Census database and, at the end, build a prediction using machine learning to predict the income variable based on the other labels in the database.
 
 ## Step 1: Data cleaning and preparation
 
@@ -74,9 +74,9 @@ data_sum_wc
 data_sum_occ
 ```
 
-Both classes have a good distribution of their values. Except for the "private" value of the Workclass, whose value exceeds the value of the other classes by a factor of 10.
+Both classes have a good distribution of their values. Except for the "private" value of the Workclass column, whose value exceeds the value of the other classes by a factor of 10.
 
-Identifyng how many missing values exist overall and by column using the function is.na and colSumns to count the missing values for each column
+Identifying how many missing values exist overall and by column using the function is.na and colSums to count the missing values for each column.
 
 ```{r, include=FALSE}
 
@@ -288,7 +288,7 @@ data <- select(data, -education)
 
 ### 4. Categorical variables
 
-Remove leading and trailing whitespaces from all character-type categorical variables.
+Remove leading and trailing whitespaces from all character-type categorical variables using the function mutate_if and trimws.
 
 ```{r, include=FALSE}
 data %>%
@@ -300,7 +300,7 @@ data %>%
 
 ### 1. Grouping Categories
 
-The native-coutry variable has many unique categories. We group all countries outside of the "united - states" into a single cathegory called "Other" to simplify de model.
+The native-coutry variable has many unique categories. We group all countries outside of the "united - states" into a single cathegory called "Other", including the missing values, to simplify de model.
 
 Checking how many categories are in native-country variable and frequency.
 
@@ -325,11 +325,13 @@ table(data$native.country)
 
 ```
 
+Here we see the difference in quantity between the two variables.
+
 ### 2. Target Transformation
 
 The income variable is text-based, so we convert it into a binary variable (0 for \<= 50k and 1 for \>50k)
 
-Convert income variables into 0 or 1.
+Convert income variables into 0 or 1 and then changing the type to numeric.
 
 ```{r, include=FALSE}
 unique(data$income)
@@ -348,12 +350,18 @@ Transforming the continuous age variable into a categorical "AgeGroup" (Young, A
 
 First, check the summary statistics of the age variable.
 
-```{r, include=FALSE}
+```{r, echo=FALSE}
 summary(data$age)
 
 ```
 
-Based on the summary statistics, we defined age groups as follows: values up to the 1st quartile (28 years) as Young, between the 1st and 3rd quartiles as Adult, and above the 3rd quartile (48 years) as Senior.
+Based on the summary statistics, we defined age groups as follows:
+
+-   Values up to the 1st quartile (28 years) as Young
+
+-   Between the 1st and 3rd quartiles as Adult
+
+-   Above the 3rd quartile (48 years) as Senior.
 
 ```{r, include=FALSE}
 data <- data %>%
@@ -628,15 +636,11 @@ ggplot(edu_race_income, aes(x = education.num, y = prop_high, color = race)) +
 
 Converting all remaining categorical variables into "dummy" variables, using one-hot encoding, to use these variables in the machine learning models.
 
-Install Required Packages.
-
 ```{r, include=FALSE}
 #install.packages("fastDummies")
 library(fastDummies)
 library(dplyr)
 ```
-
-Verify categorical columns.
 
 ```{r, include=FALSE}
 
@@ -644,7 +648,7 @@ data_chars <- data %>% select(where(is.character))
 cat_cols = names(data_chars)
 ```
 
-Convert categorical variables into dummy (numeric) variables using one-hot encoding. The first dummy column is removed to prevent multicollinearity.
+The first dummy column is removed to prevent multicollinearity.
 
 ```{r, include=FALSE}
 #create dummies variables
@@ -656,13 +660,14 @@ data_dummies <- fastDummies::dummy_cols(
 )
 ```
 
-Check the new data structure.
+Check the new data structure to see with works.
 
 ```{r, include=FALSE}
 str(data_dummies)
+sum(is.na(data_dummies))
 ```
 
-Install and prepare Modeling Packages.
+Now, we can start the preparation of the modeling.
 
 ```{r, include=FALSE}
 #install.packages("caret")
@@ -689,7 +694,7 @@ test <- na.omit(test)
 
 ```
 
-Building the Logistic Regression Model: Train a logistic regression model using all available predictors to estimate the probability of earning more than 50K.
+Building the Logistic Regression Model, training a logistic regression model using all available predictors to estimate the probability of earning more than 50K.
 
 ```{r, include=FALSE}
 #training the model
@@ -708,14 +713,18 @@ pred_class <- ifelse(pred_prob>0.5,1,0) #prob to class 1 or 0
 
 Evaluate Logistic Regression Accuracy. Generate a confusion matrix and compute model accuracy to assess predictive performance of logistic regression.
 
-```{r, echo=FALSE}
-# Confusion matrix
-table(Predict = pred_class, Real = test$income)
+-   <div>
 
-# Acurácia
-accuracy_log <- mean(pred_class == test$income)
-accuracy_log
-```
+    ```{r, echo=FALSE}
+    # Confusion matrix
+    table(Predict = pred_class, Real = test$income)
+
+    # Acurácia
+    accuracy_log <- mean(pred_class == test$income)
+    accuracy_log
+    ```
+
+    </div>
 
 ### 3. Random Forest
 
