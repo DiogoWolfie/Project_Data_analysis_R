@@ -456,7 +456,7 @@ ggplot(edu_income, aes(x = factor(education.num), y = prop_high)) +
 
 **What it shows**: Proportion of individuals earning \> \$50K by education.num.
 
-**Takeaway**: Higher education levels are associated with a higher share of high-income individuals.
+**Conclusion**: Higher education levels are associated with a higher share of high-income individuals.
 
 ### 2. Work Hours and Income
 
@@ -476,7 +476,7 @@ ggplot(data, aes(x = factor(income), y = hours.per.week)) +
 
 **What it shows**: Distribution of hours.per.week across income classes.
 
-**Takeaway**: The \>\$50K group generally works longer hours per week.
+**Conclusion**: The \>\$50K group generally works longer hours per week.
 
 ### 3. Impact of Marital Status
 
@@ -498,7 +498,7 @@ ggplot(data, aes(x = marital.status, fill = factor(income))) +
 
 **What it shows**: Within each marital.status, the proportion of ≤/\> \$50K.
 
-**Takeaway** Married individuals (esp. with spouse present) show higher high-income shares.
+**Conclusion:** Married individuals (esp. with spouse present) show higher high-income shares.
 
 ### 4. Age Distributions
 
@@ -514,7 +514,7 @@ ggplot(data, aes(x = age)) +
 
 **What it shows**: age histograms faceted by income class.
 
-**Takeaway** High-income individuals concentrate more in middle ages.
+**Conclusion:** High-income individuals concentrate more in middle ages.
 
 ### 5. Add 2 visualizations of your liking.
 
@@ -537,7 +537,7 @@ ggplot(data, aes(x = AgeGroup, y = hours.per.week, fill = factor(income))) +
 
 **What it shows**: hours.per.week distribution by AgeGroup and income.
 
-**Takeaway**: Seniors work fewer hours; \>\$50K consistently shows higher hours across groups.
+**Conclusion**: Seniors work fewer hours; \>\$50K consistently shows higher hours across groups.
 
 2.  Income Distribution (\>\$50k) by Gender and Education Level
 
@@ -579,7 +579,7 @@ ggplot(edu_sex_income, aes(x = education.num, y = prop_high, color = sex)) +
 
 **What it shows**: Proportion of \>\$50K by gender over education.num.
 
-**Takeaway**: Both genders benefit from education; males remain higher across levels.
+**Conclusion**: Both genders benefit from education; males remain higher across levels.
 
 same grafic that the above. Just a diferent whay to see it.
 
@@ -611,7 +611,7 @@ ggplot(edu_race_income, aes(x = education.num, y = prop_high, color = race)) +
 
 **What it shows**: Proportion of \>\$50K across races over education.num.
 
-**Takeaway**: Education lifts all races, but racial disparities remain visible.
+**Conclusion**: Education lifts all races, but racial disparities remain visible.
 
 ## Step 4: Modeling and Prediction
 
