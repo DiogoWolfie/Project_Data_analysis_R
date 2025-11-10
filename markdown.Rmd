@@ -11,10 +11,9 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-# Define um mirror do CRAN
 options(repos = c(CRAN = "https://cloud.r-project.org"))
 
-# Função para instalar pacotes caso não existam
+
 install_if_missing <- function(pkg) {
   if (!requireNamespace(pkg, quietly = TRUE)) {
     install.packages(pkg, repos = "https://cloud.r-project.org")
@@ -22,7 +21,6 @@ install_if_missing <- function(pkg) {
   library(pkg, character.only = TRUE)
 }
 
-# Exemplo: carregar pacotes necessários
 install_if_missing("caret")
 install_if_missing("tidyverse")
 install_if_missing("rcompanion")
@@ -546,7 +544,6 @@ ggplot(data, aes(x = AgeGroup, y = hours.per.week, fill = factor(income))) +
 
 ```{r, echo=FALSE, warning=FALSE}
 
-# Calcular a proporção de pessoas com income = 1 por sexo e nível educacional
 edu_sex_income <- data %>%
   group_by(sex, education.num) %>%
   summarise(
@@ -556,28 +553,18 @@ edu_sex_income <- data %>%
     .groups = "drop"
   )
 
-# Gráfico de barras lado a lado
-ggplot(edu_sex_income, aes(x = factor(education.num), y = prop_high, fill = sex)) +
-  geom_col(position = "dodge") +
-  scale_y_continuous(labels = percent_format(accuracy = 1)) +
-  labs(
-    title = "Proportion of people with income >50K by gender and education level.",
-    x = "Education Level (education.num)",
-    y = "Proportion with income >50K",
-    fill = "Sex"
-  ) +
-  theme_minimal()
+# # Gráfico de barras lado a lado
+# ggplot(edu_sex_income, aes(x = factor(education.num), y = prop_high, fill = sex)) +
+#   geom_col(position = "dodge") +
+#   scale_y_continuous(labels = percent_format(accuracy = 1)) +
+#   labs(
+#     title = "Proportion of people with income >50K by gender and education level.",
+#     x = "Education Level (education.num)",
+#     y = "Proportion with income >50K",
+#     fill = "Sex"
+#   ) +
+#   theme_minimal()
 
-
-```
-
-**What it shows**: Proportion of \>\$50K by gender over education.num.
-
-**Takeaway**: Both genders benefit from education; males remain higher across levels.
-
-same grafic that the above. Just a diferent whay to see it.
-
-```{r, echo=FALSE, warning=FALSE}
 ggplot(edu_sex_income, aes(x = education.num, y = prop_high, color = sex)) +
   geom_line(linewidth = 1) +
   geom_point(size = 2) +
@@ -589,7 +576,14 @@ ggplot(edu_sex_income, aes(x = education.num, y = prop_high, color = sex)) +
     color = "Sex"
   ) +
   theme_minimal()
+
 ```
+
+**What it shows**: Proportion of \>\$50K by gender over education.num.
+
+**Takeaway**: Both genders benefit from education; males remain higher across levels.
+
+same grafic that the above. Just a diferent whay to see it.
 
 3.  Income Distribution (\>50k) across Races and Education Levels.
 
@@ -708,15 +702,14 @@ Evaluate Logistic Regression Accuracy. Generate a confusion matrix and compute m
 # Confusion matrix
 table(Predict = pred_class, Real = test$income)
 
-# Acurácia
+# Accuracy
 accuracy_log <- mean(pred_class == test$income)
 accuracy_log
 
-# garantir que ambos são fatores com mesmos níveis
+# to ensure that both are factors with equal levels
 truth <- factor(as.character(test$income), levels = c("0","1"))
 pred  <- factor(as.character(pred_class),  levels = c("0","1"))
 
-# calcular métricas
 precision <- posPredValue(pred, truth, positive = "1")
 recall    <- sensitivity(pred, truth, positive = "1")
 
@@ -775,11 +768,9 @@ accuracy_rf <- mean(pred_rf_class == test$income)
 accuracy_rf
 conf_rf
 
-# garantir que ambos são fatores com mesmos níveis
 truth <- factor(as.character(test$income), levels = c("0","1"))
 pred  <- factor(as.character(pred_rf_class),  levels = c("0","1"))
 
-# calcular métricas
 precision <- posPredValue(pred, truth, positive = "1")
 recall    <- sensitivity(pred, truth, positive = "1")
 
@@ -813,7 +804,7 @@ confusionMatrix(as.factor(pred_class), as.factor(test$income), positive = "1")
 
 ```{r, echo=FALSE, warning=FALSE}
 
-# Curva ROC e AUC
+# ROC and AUC
 roc_log <- roc(test$income, pred_prob)
 plot(roc_log, col = "blue", main = "ROC Curve - Logistic Regression")
 auc_log <- auc(roc_log)
