@@ -154,7 +154,7 @@ Chi-Square Test is a statistical test used to check if there is a relationship b
 
 Cramér’s V is a measure of the strength of the association between two categorical variables. Even if the chi-square test indicates that an association exists, it doesn't show how strong that relationship is, so we use Cramer's V to verify it.
 
-```{r, include=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 #install.packages("rcompanion")
 library(rcompanion)
 
