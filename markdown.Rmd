@@ -518,7 +518,7 @@ ggplot(data, aes(x = age)) +
 
 ### 5. Add 2 visualizations of your liking.
 
- **1.  Age vs Work Hours: explore the relationship between age and hours-per-week by income. **
+**1. Age vs Work Hours: explore the relationship between age and hours-per-week by income.**
 
 ```{r, echo=FALSE, warning=FALSE}
 ggplot(data, aes(x = AgeGroup, y = hours.per.week, fill = factor(income))) +
@@ -539,7 +539,7 @@ ggplot(data, aes(x = AgeGroup, y = hours.per.week, fill = factor(income))) +
 
 **Conclusion**: Seniors work fewer hours; \>\$50K consistently shows higher hours across groups.
 
- **2.  Income Distribution (\>\$50k) by Gender and Education Level ***
+**2. Income Distribution (\>\$50k) by Gender and Education Level** \*
 
 ```{r, echo=FALSE, warning=FALSE}
 
@@ -583,7 +583,7 @@ ggplot(edu_sex_income, aes(x = education.num, y = prop_high, color = sex)) +
 
 same grafic that the above. Just a diferent whay to see it.
 
- **3.  Income Distribution (\>50k) across Races and Education Levels. **
+**3. Income Distribution (\>50k) across Races and Education Levels.**
 
 ```{r, echo=FALSE, warning=FALSE}
 edu_race_income <- data %>%
