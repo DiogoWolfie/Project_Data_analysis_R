@@ -41,14 +41,14 @@ install_if_missing("randomForest")
 
 Load the dataset and convert "?" into NA to properly mark missing values.
 
-```{r, include=FALSE}
+```{r, include=FALSE, warning=FALSE}
 library(dplyr)
 
 ```
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 
-data <- read.csv("adult.csv",sep=',', na.strings = "?")
+data <- read.csv("adult.csv",sep=',', na.strings = c("?"," ?", "? "))
 
 head(data,5)
 
@@ -61,7 +61,7 @@ Here we can see the table format, on which we based the project.
 
 Check the distribution of workclass and occupation, to understand how we will handle the missing values ​​from these classes.
 
-```{r, include=FALSE}
+```{r, include=FALSE, warning=FALSE}
 data_sum_wc <- data %>%
   filter(!is.na(workclass)) %>%
   count(workclass, sort=TRUE)
@@ -78,7 +78,7 @@ Both classes have a good distribution of their values. Except for the "private" 
 
 Identifying how many missing values exist overall and by column using the function is.na and colSums to count the missing values for each column.
 
-```{r, include=FALSE}
+```{r, include=FALSE, warning=FALSE}
 
 stack(sort(colSums(is.na(data)), decreasing = TRUE))
 
@@ -91,7 +91,7 @@ Now we're going to deal with these missing values ​​one by one.
 
 Since people over 60 and under 18 usually do not have an occupation, we count how many of them are affected.
 
-```{r, echo=FALSE}
+```{r, echo=FALSE,warning=FALSE}
 
 na_over_60_work = sum(is.na(data$workclass) & data$age >= 60)
 
@@ -291,9 +291,8 @@ data <- select(data, -education)
 Remove leading and trailing whitespaces from all character-type categorical variables using the function mutate_if and trimws.
 
 ```{r, include=FALSE}
-data %>%
-  mutate_if(is.character, trimws)
-
+data <- data %>% mutate_if(is.character, trimws)
+data <- data %>% mutate_if(is.factor, trimws)
 ```
 
 ## Step 2: Feature Transformation and Engineering
@@ -315,9 +314,9 @@ table_native_country
 
 The native-coutry variable has many unique categories. But, how the United-Sates has the majority (29170 cases), we group all countries outside of the "united - states" into a single cathegory called "Other" to simplify de model.
 
-```{r, echo= FALSE}
+```{r, echo= FALSE,warning=FALSE}
 
-data$native.country[data$native.country != "United-States"] <- "Other"
+data$native.country[is.na(data$native.country) | data$native.country != "United-States"] <- "Other"
 
 data$native.country <- factor(data$native.country)
 
@@ -350,7 +349,7 @@ Transforming the continuous age variable into a categorical "AgeGroup" (Young, A
 
 First, check the summary statistics of the age variable.
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 summary(data$age)
 
 ```
@@ -381,7 +380,7 @@ table(data$AgeGroup)
 
 Check if specific age groups have different income levels.
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 prop.table(table(data$AgeGroup, data$income), margin = 1)
 table(data$AgeGroup, data$income)
 ```
@@ -411,7 +410,7 @@ The Spearman correlation between net_capital and income is 0.137, indicating a w
 
 To provide a better quantitative overview, the table below shows the quantity, by "AgeGroup" and "income," of the number of people per "net_capital." Positive values ​​indicate positive "net_capital," and so on.
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 summary_capital <- data %>%
   group_by(AgeGroup, income) %>%
   summarise(
@@ -437,7 +436,7 @@ library(ggplot2)
 library(scales)
 ```
 
-```{r, echo=FALSE}
+```{r, echo=FALSE,warning=FALSE}
 
 edu_income <- data %>%
   group_by(education.num) %>%
@@ -468,7 +467,7 @@ Comparing the distribution of hours-per-week between the two income classes
 
 Using geom_violin()
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 ggplot(data, aes(x = factor(income), y = hours.per.week)) +
   geom_violin(trim = TRUE) +
   stat_summary(fun = median, geom = "point", size = 2, color = "black") +
@@ -486,7 +485,7 @@ ggplot(data, aes(x = factor(income), y = hours.per.week)) +
 
 Visualizing the relationship between marital-status and income.
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 ggplot(data, aes(x = marital.status, fill = factor(income))) +
   geom_bar(position = "fill") +
   scale_y_continuous(labels = percent_format(accuracy = 1)) +
@@ -508,7 +507,7 @@ ggplot(data, aes(x = marital.status, fill = factor(income))) +
 
 Visualizing the age variable, facted by the income class, to observe distributional differences.
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 ggplot(data, aes(x = age)) +
   geom_histogram(bins = 30, alpha = 0.8) +
   facet_wrap(~ income) +
@@ -524,7 +523,7 @@ ggplot(data, aes(x = age)) +
 
 1.  Age vs Work Hours: explore the relationship between age and hours-per-week by income.
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 ggplot(data, aes(x = AgeGroup, y = hours.per.week, fill = factor(income))) +
   geom_boxplot(alpha = 0.7, outlier.shape = NA) +
   scale_fill_manual(values = c("#6BAED6", "#FD8D3C"),
@@ -543,7 +542,7 @@ ggplot(data, aes(x = AgeGroup, y = hours.per.week, fill = factor(income))) +
 
 **Takeaway**: Seniors work fewer hours; \>\$50K consistently shows higher hours across groups.
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 ggplot(data %>% filter(age & hours.per.week), aes(x = age, y = hours.per.week, color = income)) +
   geom_point(alpha = 0.3, size = 0.8) +
   geom_smooth(method = "loess", se = FALSE) +
@@ -553,7 +552,7 @@ ggplot(data %>% filter(age & hours.per.week), aes(x = age, y = hours.per.week, c
 
 2.  Income Distribution (\>\$50k) by Gender and Education Level
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 
 # Calcular a proporção de pessoas com income = 1 por sexo e nível educacional
 edu_sex_income <- data %>%
@@ -586,7 +585,7 @@ ggplot(edu_sex_income, aes(x = factor(education.num), y = prop_high, fill = sex)
 
 same grafic that the above. Just a diferent whay to see it.
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 ggplot(edu_sex_income, aes(x = education.num, y = prop_high, color = sex)) +
   geom_line(linewidth = 1) +
   geom_point(size = 2) +
@@ -602,7 +601,7 @@ ggplot(edu_sex_income, aes(x = education.num, y = prop_high, color = sex)) +
 
 3.  Income Distribution (\>50k) across Races and Education Levels.
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 edu_race_income <- data %>%
   group_by(race, education.num) %>%
   summarise(
@@ -689,8 +688,8 @@ train_index <- sample(1:n_rows, 0.8*n_rows)
 train <- data_dummies[train_index,]
 test <- data_dummies[-train_index,]
 
-train <- na.omit(train)
-test <- na.omit(test)
+#train <- na.omit(train)
+#test <- na.omit(test)
 
 ```
 
@@ -713,18 +712,33 @@ pred_class <- ifelse(pred_prob>0.5,1,0) #prob to class 1 or 0
 
 Evaluate Logistic Regression Accuracy. Generate a confusion matrix and compute model accuracy to assess predictive performance of logistic regression.
 
--   <div>
+```{r, echo=FALSE, warning=FALSE}
+# Confusion matrix
+table(Predict = pred_class, Real = test$income)
 
-    ```{r, echo=FALSE}
-    # Confusion matrix
-    table(Predict = pred_class, Real = test$income)
+# Acurácia
+accuracy_log <- mean(pred_class == test$income)
+accuracy_log
 
-    # Acurácia
-    accuracy_log <- mean(pred_class == test$income)
-    accuracy_log
-    ```
+# garantir que ambos são fatores com mesmos níveis
+truth <- factor(as.character(test$income), levels = c("0","1"))
+pred  <- factor(as.character(pred_class),  levels = c("0","1"))
 
-    </div>
+# calcular métricas
+precision <- posPredValue(pred, truth, positive = "1")
+recall    <- sensitivity(pred, truth, positive = "1")
+
+precision
+recall
+```
+
+For the logistic model, we have:
+
+-   Accuracy = 0.85
+
+-   Precision = 0.73
+
+-   Recall = 0.60
 
 ### 3. Random Forest
 
@@ -759,19 +773,41 @@ model_rf
 
 Predict income on the test dataset using the Random Forest model and calculate accuracy from the confusion matrix.
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 pred_rf_class <- predict(model_rf, newdata = test)
 pred_rf_prob <- predict(model_rf, newdata = test, type='prob')[,2]
+
 conf_rf <- table(Predict = pred_rf_class, Real = test$income)
+
 accuracy_rf <- mean(pred_rf_class == test$income)
 accuracy_rf
 conf_rf
+
+# garantir que ambos são fatores com mesmos níveis
+truth <- factor(as.character(test$income), levels = c("0","1"))
+pred  <- factor(as.character(pred_rf_class),  levels = c("0","1"))
+
+# calcular métricas
+precision <- posPredValue(pred, truth, positive = "1")
+recall    <- sensitivity(pred, truth, positive = "1")
+
+precision
+recall
+
 # varImpPlot(model_rf, main = "Importance of variables")
 ```
 
+For the Random Forest model, we have:
+
+-   Accuracy = 0.87
+
+-   Precision = 0.76
+
+-   Recall = 0.62
+
 Compare the accuracy of logistic regression and random forest to identify which model performs better.
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 cat("Accuracy Logistic:", round(accuracy_log, 3), "\n")
 cat("Accuracy Random Forest: ", round(accuracy_rf,3), "\n")
 ```
@@ -783,7 +819,7 @@ Plot the ROC curve and calculate the AUC (Area Under Curve) for logistic regress
 confusionMatrix(as.factor(pred_class), as.factor(test$income), positive = "1")
 ```
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 
 # Curva ROC e AUC
 roc_log <- roc(test$income, pred_prob)
@@ -792,13 +828,15 @@ auc_log <- auc(roc_log)
 auc_log
 ```
 
+The area under the ROC curve for the logistical model was 0.909.
+
 Evaluating Random Forest: Assess the Random Forest model with confusion matrix, ROC curve, and AUC score to measure predictive performance.
 
 ```{r, include=FALSE}
 confusionMatrix(pred_rf_class, as.factor(test$income), positive="1")
 ```
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 #confusion matrix and AUC for RF
 library(caret)
 library(pROC)
@@ -808,15 +846,17 @@ plot(roc_rf, col = "darkgreen", main = "ROC Curve - Random Forest")
 auc(roc_rf)
 ```
 
+The area under the ROC curve for the logistical model was 0.910.
+
 Display Predicted Class Distribution
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 table(pred_rf_class)
 ```
 
 Identify the Most Important Variables.
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 
 importance_df <- as.data.frame(importance(model_rf))
 top5_vars <- importance_df %>%
