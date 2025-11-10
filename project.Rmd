@@ -1,5 +1,5 @@
 ---
-title: "new project"
+title: "Predicting High-Income Individuals: A Data-Driven Analysis of the UCI Adult Dataset"
 author: "Team idk"
 date: "2025-10-22"
 output:
