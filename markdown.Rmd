@@ -192,7 +192,7 @@ We found that only the variables sex (small p_value and 0.43 of Cramér’s V) a
 ```{r, include=FALSE}
 
 set.seed(42)
-# tabela global para fallback
+# global table for fallback
 freq_global <- table(data$occupation, useNA = "no")
 probs_global <- freq_global / sum(freq_global)
 levels_global <- names(probs_global)
@@ -553,7 +553,6 @@ edu_sex_income <- data %>%
     .groups = "drop"
   )
 
-# # Gráfico de barras lado a lado
 # ggplot(edu_sex_income, aes(x = factor(education.num), y = prop_high, fill = sex)) +
 #   geom_col(position = "dodge") +
 #   scale_y_continuous(labels = percent_format(accuracy = 1)) +
