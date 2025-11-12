@@ -16,7 +16,7 @@ The analysis includes a full **data cleaning, feature engineering, visualization
 ---
 
 ## Dataset
-- **Source:** [UCI Machine Learning Repository – Adult Dataset](https://archive.ics.uci.edu/ml/datasets/adult)
+- **Source:** [UCI Machine Learning Repository – Adult Dataset](https://www.kaggle.com/datasets/uciml/adult-census-income)
 - **Records:** 32,561 individuals
 - **Features:** 14 attributes (demographic, occupational, and financial)
 - **Target Variable:** `income` (`<=50K` or `>50K`)
