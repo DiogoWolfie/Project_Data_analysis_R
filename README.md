@@ -6,7 +6,7 @@ The analysis includes a full **data cleaning, feature engineering, visualization
 
 ---
 
-## 🧩 Objectives
+## Objectives
 - Clean and preprocess the raw data from the UCI Adult dataset.
 - Engineer meaningful features to improve model interpretability and accuracy.
 - Visualize income-related patterns using **ggplot2**.
@@ -15,7 +15,7 @@ The analysis includes a full **data cleaning, feature engineering, visualization
 
 ---
 
-## 🧠 Dataset
+## Dataset
 - **Source:** [UCI Machine Learning Repository – Adult Dataset](https://archive.ics.uci.edu/ml/datasets/adult)
 - **Records:** 32,561 individuals
 - **Features:** 14 attributes (demographic, occupational, and financial)
@@ -88,7 +88,7 @@ The analysis includes a full **data cleaning, feature engineering, visualization
 
 ---
 
-## 🧑‍💻 Authors
+## Authors
 **Team IDK**  
 - Diogo Pereira Lobo  
 - Eunsang Lee
